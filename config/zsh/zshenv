@@ -1,0 +1,6 @@
+# uv
+export PATH="/Users/alan/.local/bin:$PATH"
+
+# Editor configuration
+export EDITOR='nvim'
+export VISUAL='nvim'
