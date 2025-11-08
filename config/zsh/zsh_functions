@@ -1,0 +1,12 @@
+clp() {
+    bun run claude --model haiku -p "$*" | nvim -c "set buftype=nofile bufhidden=wipe noswapfile" -
+}
+
+
+# Play media with mpv - works with audio/video
+# Usage: m          -> opens fzf picker (searches ~/Music)
+#        m <dir>    -> opens fzf picker (searches specified directory)
+m() {
+    local selected=$(fd . "${1:-$HOME/Music}" -X ls -t | fzf --multi --reverse)
+    [[ -n "$selected" ]] && mpv --shuffle --loop-playlist=inf ${(f)selected}
+}
