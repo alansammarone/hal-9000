@@ -1,11 +1,26 @@
+# Kitty-specific zshrc. The main ~/.zshrc is a symlink to this file.
+# There's also ~/.zshrc-iterm for iTerm-specific config. To switch between them,
+# change the symlink: ln -sf ~/.zshrc-kitty ~/.zshrc (or -iterm)
+
 # If you come from bash you might have to change your $PATH.
 # export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
 export PATH="/Users/alan/.bun/bin:$PATH"
 
-# Auto-start tmux in Kitty (for bottom spacing)
+# Auto-start tmux for bottom spacing (tmux status bar provides padding).
+# Only when running directly in Kitty and not already inside tmux.
+# The exec replaces the shell process with tmux to avoid nested shells.
 if [[ "$TERM" == "xterm-kitty" ]] && [[ -z "$TMUX" ]]; then
-    # Create a unique session per Kitty tab/window
-    exec tmux new-session
+    exec tmux new-session -c "$PWD"
+fi
+
+# Kitty shell integration updates tab titles and enables special features. Normally loads
+# automatically, but exec'ing tmux kills that process, so we load it manually here (after
+# tmux starts). The unfunction cleans up the loader since it's only needed once.
+if [[ -n "$KITTY_INSTALLATION_DIR" ]]; then
+    export KITTY_SHELL_INTEGRATION="enabled"
+    autoload -Uz -- "$KITTY_INSTALLATION_DIR"/shell-integration/zsh/kitty-integration
+    kitty-integration
+    unfunction kitty-integration
 fi
 
 # Path to your Oh My Zsh installation.
@@ -118,11 +133,9 @@ eval "$(zoxide init zsh)"
 source ~/.zsh_aliases
 source ~/.zsh_functions
 
-# Edit command line in $EDITOR (Ctrl+e - Right Option remapped to Ctrl in Iterm2)
+# Ctrl+E opens the current command in $EDITOR (nvim). This conflicts with the standard
+# Ctrl+E end-of-line binding, but that's handled by Cmd+Right in Kitty (which sends the
+# End key instead). See .config/kitty/kitty.conf for the Cmd+Right mapping.
 autoload -Uz edit-command-line
 zle -N edit-command-line
 bindkey '^e' edit-command-line
-
-
-test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
-

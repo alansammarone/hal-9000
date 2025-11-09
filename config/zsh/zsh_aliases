@@ -1,4 +1,4 @@
-alias cl="bun run claude"
+alias cl="bunx @anthropic-ai/claude-code"
 alias python="python3"
 alias c="container"
 alias p="podman"
