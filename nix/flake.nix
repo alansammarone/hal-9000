@@ -65,6 +65,13 @@
               };
             };
 
+            # Keyboard remapping
+            system.keyboard = {
+              enableKeyMapping = true;
+              # Remap Caps Lock to Control
+              remapCapsLockToControl = true;
+            };
+
             # Primary user for system defaults
             system.primaryUser = "alan";
 
