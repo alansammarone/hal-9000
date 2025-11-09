@@ -1,12 +1,20 @@
 clp() {
-    bun run claude --model haiku -p "$*" | nvim -c "set buftype=nofile bufhidden=wipe noswapfile" -
+    bun run claude --model haiku -p "You are being invoked from the terminal in non-interactive mode. Provide concise answers and explicitly warn the user when a command is destructive or irreversible. The user request is: \n $*" | nvim -c "set buftype=nofile bufhidden=wipe noswapfile" -
 }
 
 
 # Play media with mpv - works with audio/video
-# Usage: m          -> opens fzf picker (searches ~/Music)
-#        m <dir>    -> opens fzf picker (searches specified directory)
+# Usage: m          -> opens broot picker (searches ~/Music/Library)
+#        m <dir>    -> opens broot picker (searches specified directory)
+# Keys: Tab to select/unselect, Enter to play selection
 m() {
-    local selected=$(fd . "${1:-$HOME/Music}" -X ls -t | fzf --multi --reverse)
+    local base_dir="${1:-$HOME/Music/Library/}"
+    local selected=$(broot "$base_dir")
     [[ -n "$selected" ]] && mpv --shuffle --loop-playlist=inf ${(f)selected}
+}
+
+# Create new kitty tab in current tmux pane's directory
+nt() {
+    local cwd=$(tmux display-message -p '#{pane_current_path}' 2>/dev/null)
+    kitty @ launch --type=tab --cwd="${cwd:-$HOME}" &>/dev/null
 }

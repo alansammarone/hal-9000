@@ -1,0 +1,15 @@
+// broot configuration
+// Multi-select with Tab, output selections with Enter
+
+{
+    verbs: [
+        {
+            key: "tab"
+            cmd: ":toggle_stage;:next_match"
+        }
+        {
+            key: "enter"
+            cmd: ":panel_right;:print_path"
+        }
+    ]
+}

@@ -139,3 +139,8 @@ source ~/.zsh_functions
 autoload -Uz edit-command-line
 zle -N edit-command-line
 bindkey '^e' edit-command-line
+
+
+eval $(thefuck --alias)
+
+source /Users/alan/.config/broot/launcher/bash/br
