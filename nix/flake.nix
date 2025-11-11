@@ -31,6 +31,8 @@
               pkgs.git
               pkgs.eza
               pkgs.fd
+              pkgs.nil
+              pkgs.switchaudio-osx
             ];
 
             # macOS system defaults

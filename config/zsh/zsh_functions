@@ -18,3 +18,33 @@ nt() {
     local cwd=$(tmux display-message -p '#{pane_current_path}' 2>/dev/null)
     kitty @ launch --type=tab --cwd="${cwd:-$HOME}" &>/dev/null
 }
+
+# Switch to AirPods (prefer eqMac version if available)
+airpods() {
+    local current=$(SwitchAudioSource -c)
+    local all_devices=$(SwitchAudioSource -a)
+
+    local airpods_devices=$(echo "$all_devices" | grep -i "airpods")
+
+    if [[ -z "$airpods_devices" ]]; then
+        echo "No AirPods devices found"
+        return 1
+    fi
+
+    local eqmac_airpods=$(echo "$airpods_devices" | grep -i "eqmac")
+    local target=""
+
+    if [[ -n "$eqmac_airpods" ]]; then
+        target="$eqmac_airpods"
+    else
+        target=$(echo "$airpods_devices" | head -n 1)
+    fi
+
+    if [[ "$current" == "$target" ]]; then
+        echo "Already using: $target"
+        return 0
+    fi
+
+    SwitchAudioSource -s "$target"
+    echo "Switched to: $target"
+}
