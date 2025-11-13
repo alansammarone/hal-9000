@@ -26,13 +26,17 @@
           ({ pkgs, ... }: {
             # Packages to install system-wide
             environment.systemPackages = [
-              pkgs.youtube-tui
               pkgs.vim
               pkgs.git
               pkgs.eza
               pkgs.fd
+              pkgs.bat
+              pkgs.broot
+              pkgs.zoxide
+              pkgs.ripgrep
               pkgs.nil
               pkgs.switchaudio-osx
+              pkgs.shfmt
             ];
 
             # macOS system defaults
