@@ -101,7 +101,7 @@ def draw_tab(
     )
 
     if padding_needed > 0:
-        screen.draw(" " * padding_needed)
+        screen.draw(" " * (padding_needed - 2)) # add less padding for now due to bug
 
     # Draw right separator
     screen.cursor.fg = bg
