@@ -1,0 +1,28 @@
+#cloud-config
+ssh_authorized_keys:
+  - {{SSH_KEY}}
+
+packages:
+  - podman
+
+write_files:
+  - path: /etc/systemd/system/podman-builder.service
+    owner: root:root
+    permissions: '0644'
+    content: |
+      [Unit]
+      Description=Podman API service for remote builder
+      After=network-online.target
+      Wants=network-online.target
+
+      [Service]
+      Type=simple
+      ExecStart=/usr/bin/podman system service -t 0 unix:///run/podman/podman.sock
+      Restart=on-failure
+
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  - [ sh, -c, 'dnf -y update' ]
+  - [ sh, -c, 'systemctl enable --now podman-builder.service' ]
