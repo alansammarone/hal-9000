@@ -37,6 +37,8 @@
               pkgs.nil
               pkgs.switchaudio-osx
               pkgs.shfmt
+              pkgs.qemu
+              pkgs.cdrtools
             ];
 
             # macOS system defaults

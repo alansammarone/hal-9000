@@ -1,9 +1,11 @@
 export PATH="/Users/alan/.bun/bin:$PATH"
 
-if [[ "$TERM" == "xterm-kitty" ]] && [[ -z "$TMUX" ]]; then
-    exec tmux new-session -c "$PWD"
-fi
-
+# Bottom padding via escape sequences
+# TODO: use the variable
+BOTTOM_PADDING_LINES=10
+precmd() {
+  printf '\n\n\n\n\n\n\n\e[7A'
+}
 if [[ -n "$KITTY_INSTALLATION_DIR" ]]; then
     export KITTY_SHELL_INTEGRATION="enabled"
     autoload -Uz -- "$KITTY_INSTALLATION_DIR"/shell-integration/zsh/kitty-integration

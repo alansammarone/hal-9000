@@ -5,5 +5,10 @@ export PATH="/Users/alan/.local/bin:$PATH"
 export EDITOR='nvim'
 export VISUAL='nvim'
 
+# AWS CLI - disable EC2 instance metadata service checks (only on macOS)
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    export AWS_EC2_METADATA_DISABLED=true
+fi
+
 # Semi-sensitive environment variables (API tokens, etc.)
 [ -f ~/.zsh_secrets ] && source ~/.zsh_secrets
