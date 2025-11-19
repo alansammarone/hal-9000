@@ -29,15 +29,24 @@ cd "$VM_DIR"
 echo "==> Spinning up Fedora v${FEDORA_VERSION} (ram=${VM_RAM}MB, cpus=${VM_CPUS}, machine=${VM_MACHINE}, accel=${VM_ACCEL})"
 echo
 
-# Download Fedora Cloud image
+# Download Fedora Cloud base image (pristine, never modified)
 FEDORA_QCOW_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/${FEDORA_VERSION}/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-${FEDORA_VERSION}-1.1.x86_64.qcow2"
+FEDORA_BASE_QCOW="fedora-cloud-${FEDORA_VERSION}-base.qcow2"
 FEDORA_QCOW_NAME="fedora-cloud-${FEDORA_VERSION}.qcow2"
 
-if [ ! -f "$FEDORA_QCOW_NAME" ]; then
-	echo "==> Downloading Fedora Cloud qcow2"
-	curl -L "$FEDORA_QCOW_URL" -o "$FEDORA_QCOW_NAME"
+if [ ! -f "$FEDORA_BASE_QCOW" ]; then
+	echo "==> Downloading Fedora Cloud base image"
+	curl -L "$FEDORA_QCOW_URL" -o "$FEDORA_BASE_QCOW"
 else
-	echo "==> Using existing qcow2"
+	echo "==> Using existing base image"
+fi
+
+# Create overlay image with backing file (VM writes go here, base stays pristine)
+if [ ! -f "$FEDORA_QCOW_NAME" ]; then
+	echo "==> Creating overlay image with backing file"
+	qemu-img create -f qcow2 -F qcow2 -b "$FEDORA_BASE_QCOW" "$FEDORA_QCOW_NAME"
+else
+	echo "==> Using existing overlay image"
 fi
 
 # Read SSH key
