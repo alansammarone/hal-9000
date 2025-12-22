@@ -73,16 +73,6 @@
               screencapture = {
                 location = "~/Screenshots";
               };
-
-              # Custom preferences (for settings not yet built into nix-darwin)
-              CustomUserPreferences = {
-                NSGlobalDomain = {
-                  # Effectively disable tooltips by setting a 100-second delay
-                  # Default is 1000ms (1 second). Values are in milliseconds.
-                  # Use 10000 for 10s, 100000 for 100s to never see tooltips.
-                  NSInitialToolTipDelay = 100000;
-                };
-              };
             };
 
             # Keyboard remapping
