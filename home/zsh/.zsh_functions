@@ -1,5 +1,5 @@
 clp() {
-    bun run claude --model haiku -p "You are being invoked from the terminal in non-interactive mode. Provide concise answers and explicitly warn the user when a command is destructive or irreversible. The user request is: \n $*" | nvim -c "set buftype=nofile bufhidden=wipe noswapfile" -
+    bun run claude --model sonnet -p "You are being invoked from the terminal in non-interactive mode. Provide concise answers and explicitly warn the user when a command is destructive or irreversible. The user request is: \n $*" | nvim -c "set buftype=nofile bufhidden=wipe noswapfile" -
 }
 
 
@@ -47,4 +47,114 @@ airpods() {
 
     SwitchAudioSource -s "$target"
     echo "Switched to: $target"
+}
+
+# SSH Alias Management for Ephemeral Hosts
+# These functions manage dynamic SSH configs in ~/.ssh/conf.d/ for hosts with changing IPs
+
+# Create or update an SSH alias configuration
+# Usage: set_ssh_alias <alias> <user> <host> <identity_file> [port]
+# Example: set_ssh_alias vastai root 10.31.9.56 ~/.ssh/id_ed25519_vastai 43443
+set_ssh_alias() {
+  if (( $# < 4 || $# > 5 )); then
+    echo "usage: set_ssh_alias <alias> <user> <host> <identity_file> [port]" >&2
+    return 1
+  fi
+
+  local alias="$1"
+  local user="$2"
+  local host="$3"
+  local key="$4"
+  local port="${5:-22}"
+
+  # Validate identity file exists
+  if [[ ! -f "$key" ]]; then
+    echo "error: identity file not found: $key" >&2
+    return 1
+  fi
+
+  local conf_dir="${HOME}/.ssh/conf.d"
+  local conf_file="${conf_dir}/${alias}.conf"
+  local tmp="${conf_file}.$$"
+  local kh_file="${HOME}/.ssh/known_hosts_${alias}"
+  local sockets_dir="${HOME}/.ssh/sockets"
+
+  # Ensure directories exist with proper permissions
+  mkdir -p "$conf_dir" "$sockets_dir"
+  chmod 700 "$conf_dir" "$sockets_dir"
+
+  # Remove old known_hosts for this alias (fresh start on each update)
+  rm -f "$kh_file"
+
+  # Write config atomically using temp file
+  cat > "$tmp" <<EOF
+Host ${alias}
+    HostName ${host}
+    User ${user}
+    Port ${port}
+    IdentityFile ${key}
+    IdentitiesOnly yes
+    HostKeyAlias ${alias}
+    UserKnownHostsFile ${kh_file}
+    StrictHostKeyChecking accept-new
+    ControlMaster auto
+    ControlPath ${sockets_dir}/%r@%h:%p
+    ControlPersist 600
+EOF
+
+  chmod 600 "$tmp"
+  mv "$tmp" "$conf_file"
+}
+
+# List all managed SSH aliases with their connection info
+# Usage: list_ssh_aliases
+list_ssh_aliases() {
+  local conf_dir="${HOME}/.ssh/conf.d"
+
+  if [[ ! -d "$conf_dir" ]] || [[ -z "$(ls -A "$conf_dir" 2>/dev/null)" ]]; then
+    echo "No SSH aliases configured"
+    return 0
+  fi
+
+  # Print header
+  printf "%-20s %-30s %s\n" "ALIAS" "CONNECTION" "KEY"
+  printf "%-20s %-30s %s\n" "-----" "----------" "---"
+
+  # Parse and display each config file
+  for conf in "$conf_dir"/*.conf; do
+    [[ -f "$conf" ]] || continue
+
+    local alias="${conf:t:r}"  # zsh: basename without extension
+    local host=$(awk '/^[[:space:]]*HostName/ {print $2; exit}' "$conf")
+    local user=$(awk '/^[[:space:]]*User/ {print $2; exit}' "$conf")
+    local port=$(awk '/^[[:space:]]*Port/ {print $2; exit}' "$conf")
+    local key=$(awk '/^[[:space:]]*IdentityFile/ {print $2; exit}' "$conf")
+
+    # Strip ~/.ssh/ prefix to show relative path
+    key="${key/#$HOME\/.ssh\//}"
+    key="${key/#~\/.ssh\//}"
+
+    printf "%-20s %-30s %s\n" "$alias" "$user@$host:$port" "$key"
+  done
+}
+
+# Remove an SSH alias and its associated files
+# Usage: remove_ssh_alias <alias>
+remove_ssh_alias() {
+  if (( $# != 1 )); then
+    echo "usage: remove_ssh_alias <alias>" >&2
+    return 1
+  fi
+
+  local alias="$1"
+  local conf_file="${HOME}/.ssh/conf.d/${alias}.conf"
+  local kh_file="${HOME}/.ssh/known_hosts_${alias}"
+
+  if [[ ! -f "$conf_file" ]]; then
+    echo "error: no config found for alias '$alias'" >&2
+    return 1
+  fi
+
+  rm -f "$conf_file" "$kh_file"
+  echo "Removed SSH alias '${alias}'"
 }

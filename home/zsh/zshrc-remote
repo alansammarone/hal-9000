@@ -1,0 +1,22 @@
+#!/usr/bin/env zsh
+# Minimal zshrc for remote Ubuntu servers
+# No kitty integration, no macOS-specific tools
+
+# Source environment variables (EDITOR, etc.)
+[ -f ~/.config/zsh/zshenv ] && source ~/.config/zsh/zshenv
+
+# Load oh-my-zsh configuration
+[ -f ~/.config/zsh/omz.zsh ] && source ~/.config/zsh/omz.zsh
+
+# Load fzf fuzzy finder
+[ -f ~/.config/zsh/fzf.zsh ] && source ~/.config/zsh/fzf.zsh
+
+# Load keybindings (Ctrl+E to edit command line)
+[ -f ~/.config/zsh/keybinds.zsh ] && source ~/.config/zsh/keybinds.zsh
+
+# Initialize starship prompt
+command -v starship &>/dev/null && eval "$(starship init zsh)"
+
+# Load aliases and functions
+[ -f ~/.config/zsh/.zsh_aliases ] && source ~/.config/zsh/.zsh_aliases
+[ -f ~/.config/zsh/.zsh_functions ] && source ~/.config/zsh/.zsh_functions
