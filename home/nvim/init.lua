@@ -711,13 +711,7 @@ require('lazy').setup({
         -- ts_ls = {},
         --
 
-        ty = {
-          settings = {
-            ty = {
-              diagnosticMode = 'off', -- Disable type error diagnostics
-            },
-          },
-        },
+        -- ty = {}, -- ty not officially supported in nvim-lspconfig yet, configured manually below
 
         lua_ls = {
           -- cmd = { ... },
@@ -769,6 +763,22 @@ require('lazy').setup({
           end,
         },
       }
+
+      -- Manual configuration for ty (not officially supported in nvim-lspconfig yet)
+      -- See: https://github.com/neovim/nvim-lspconfig/issues/3871
+      vim.lsp.config('ty', {
+        cmd = { 'ty', 'server' },
+        filetypes = { 'python' },
+        root_markers = { 'pyproject.toml', 'setup.py', '.git' },
+        capabilities = capabilities,
+        settings = {
+          ty = {
+            diagnosticMode = 'off', -- Disable type checking (wrong argument types, etc)
+            showSyntaxErrors = true, -- Keep syntax errors (undefined vars, bad syntax, etc)
+          },
+        },
+      })
+      vim.lsp.enable('ty')
     end,
   },
 
