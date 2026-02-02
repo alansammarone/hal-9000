@@ -2,13 +2,22 @@
 set -euo pipefail
 
 # OpenBSD QEMU VM - Installation Runner (Interactive Mode)
-# This script runs the initial installation with serial console on stdio
+# Serves install.conf via HTTP using Python, accessed via QEMU port forwarding
 
 VM_DIR="{{VM_DIR}}"
 
+# Start HTTP server in background
+echo "==> Starting HTTP server for install.conf"
+cd "${VM_DIR}"
+python3 -m http.server 8888 >/dev/null 2>&1 &
+HTTP_PID=$!
+trap "kill ${HTTP_PID} 2>/dev/null" EXIT
+
 echo "==> Starting OpenBSD installation"
-echo "==> Press 'I' at the welcome screen to trigger autoinstall"
-echo "==> Or answer the installation questions manually (see install.conf for reference)"
+echo "==> At the installer prompt:"
+echo "    - Press 'I' to start installer"
+echo "    - Press 'A' for autoinstall"
+echo "    - When asked for location, enter: http://10.0.2.2:8888/install.conf"
 echo "==> Press Ctrl-C when installation completes and VM reboots"
 echo ""
 
@@ -19,8 +28,8 @@ exec qemu-system-x86_64 \
   -smp {{VM_CPUS}} \
   -m {{VM_RAM}} \
   -drive "if=virtio,file=${VM_DIR}/openbsd-{{OPENBSD_VERSION}}.qcow2,format=qcow2" \
-  -drive "if=virtio,file=${VM_DIR}/install{{ISO_VERSION}}.iso,format=raw,media=cdrom,readonly=on" \
+  -cdrom "${VM_DIR}/install{{ISO_VERSION}}.iso" \
+  -boot d \
   -netdev user,id=net0 \
   -device virtio-net-pci,netdev=net0 \
-  -display none \
-  -serial stdio
+  -display cocoa

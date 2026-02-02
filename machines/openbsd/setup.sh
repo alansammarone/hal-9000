@@ -22,8 +22,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Validation
 echo "==> Validating dependencies"
-command -v qemu-system-x86_64 >/dev/null || { echo "Error: qemu-system-x86_64 not found"; exit 1; }
-command -v qemu-img >/dev/null || { echo "Error: qemu-img not found"; exit 1; }
+command -v qemu-system-x86_64 >/dev/null || { echo "Error: qemu-system-x86_64 not found. Install with: brew install qemu"; exit 1; }
+command -v qemu-img >/dev/null || { echo "Error: qemu-img not found. Install with: brew install qemu"; exit 1; }
+command -v signify >/dev/null || { echo "Error: signify not found. Install with: brew install signify-osx"; exit 1; }
+command -v python3 >/dev/null || { echo "Error: python3 not found"; exit 1; }
 command -v curl >/dev/null || { echo "Error: curl not found"; exit 1; }
 
 SSH_KEY_PATH="${HOME}/.ssh/personal/qemu_openbsd.pub"
@@ -41,12 +43,17 @@ cd "$VM_DIR"
 # Download installation ISO
 ISO_VERSION="${OPENBSD_VERSION//./}"  # Remove dot: 7.8 -> 78
 ISO_NAME="install${ISO_VERSION}.iso"
-ISO_URL="https://cdn.openbsd.org/pub/OpenBSD/${OPENBSD_VERSION}/${OPENBSD_ARCH}/${ISO_NAME}"
+BASE_URL="https://cdn.openbsd.org/pub/OpenBSD/${OPENBSD_VERSION}/${OPENBSD_ARCH}"
 
 if [ ! -f "$ISO_NAME" ]; then
     echo "==> Downloading OpenBSD ${OPENBSD_VERSION} installation ISO"
-    echo "    URL: $ISO_URL"
-    curl -L -o "$ISO_NAME" "$ISO_URL"
+    curl -sL -o "$ISO_NAME" "${BASE_URL}/${ISO_NAME}"
+    curl -sL -o SHA256 "${BASE_URL}/SHA256"
+    curl -sL -o SHA256.sig "${BASE_URL}/SHA256.sig"
+    curl -sL -o "openbsd-${ISO_VERSION}-base.pub" "${BASE_URL}/openbsd-${ISO_VERSION}-base.pub"
+
+    echo "==> Verifying ISO"
+    signify -C -p "openbsd-${ISO_VERSION}-base.pub" -x SHA256.sig "$ISO_NAME" || { echo "Verification failed"; exit 1; }
 else
     echo "==> Using existing ISO: $ISO_NAME"
 fi
@@ -64,25 +71,32 @@ fi
 echo "==> Reading SSH public key from $SSH_KEY_PATH"
 PUBKEY="$(cat "$SSH_KEY_PATH")"
 
-# Generate password hashes
+# Get passwords (plaintext - will be hashed during install)
 echo ""
-echo "==> Password hash generation required"
-echo "    Run: openssl passwd -6"
-echo "    This generates bcrypt hashes for OpenBSD"
+echo "==> Password configuration"
+echo "    WARNING: Passwords will be stored in PLAINTEXT in install.conf"
+echo "    They will be hashed by the installer during installation"
+echo "    Use temporary passwords and change them after first boot"
 echo ""
-read -rp "Enter root password hash: " ROOT_HASH
-read -rp "Enter user password hash: " USER_HASH
+read -rsp "Enter root password: " ROOT_PASSWORD
+echo ""
+read -rsp "Enter user password: " USER_PASSWORD
+echo ""
+echo ""
 
 # Generate install.conf
 echo "==> Generating install.conf"
 sed \
     -e "s|{{VM_HOSTNAME}}|${VM_HOSTNAME}|g" \
-    -e "s|{{ROOT_PASSWORD_HASH}}|${ROOT_HASH}|g" \
-    -e "s|{{USER_PASSWORD_HASH}}|${USER_HASH}|g" \
+    -e "s|{{ROOT_PASSWORD}}|${ROOT_PASSWORD}|g" \
+    -e "s|{{USER_PASSWORD}}|${USER_PASSWORD}|g" \
     -e "s|{{VM_USER}}|${VM_USER}|g" \
     -e "s|{{SSH_PUBLIC_KEY}}|${PUBKEY}|g" \
     -e "s|{{TIMEZONE}}|${TIMEZONE}|g" \
     "$SCRIPT_DIR/templates/install.conf" > install.conf
+
+# Note: install.conf will be served via HTTP during installation
+echo "==> install.conf created (will be served via HTTP during installation)"
 
 # Generate run-vm.sh
 echo "==> Generating run-vm.sh (production runner)"
@@ -118,7 +132,7 @@ echo "Files created in $VM_DIR:"
 echo "  - $ISO_NAME (installation ISO)"
 echo "  - $DISK_NAME (20GB virtual disk)"
 echo "  - install.conf (autoinstall answer file)"
-echo "  - run-install.sh (installer runner)"
+echo "  - run-install.sh (installer runner with HTTP server)"
 echo "  - run-vm.sh (production runner)"
 echo "  - post-install-config.sh (post-install script)"
 echo ""
@@ -126,9 +140,10 @@ echo "Next steps:"
 echo "  1. Run the installer:"
 echo "     ${VM_DIR}/run-install.sh"
 echo ""
-echo "  2. At the OpenBSD boot prompt, either:"
-echo "     - Press 'I' and then 'A' to trigger autoinstall"
-echo "     - Or answer installation questions manually"
+echo "  2. At the OpenBSD installer prompt:"
+echo "     - Press 'I' to start the installer"
+echo "     - Press 'A' to trigger autoinstall"
+echo "     - When asked for location, enter: http://10.0.2.2:8888/install.conf"
 echo ""
 echo "  3. After installation completes and VM reboots, press Ctrl-C"
 echo ""
