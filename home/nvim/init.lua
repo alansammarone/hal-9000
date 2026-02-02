@@ -551,6 +551,17 @@ require('lazy').setup({
             vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = 'LSP: ' .. desc })
           end
 
+          -- NOTE: LSP Keybindings for Python/dynamic languages
+          --  Most useful:
+          --    gd  - Jump to where function/class is defined (the actual code)
+          --    gr  - Find all references (where is this used?)
+          --    K   - Show documentation/type info (built-in, already works)
+          --  Rarely needed:
+          --    gD  - Declaration (same as gd in Python, or goes to .pyi stubs)
+          --    gi  - Implementation (only useful for abstract classes/Protocols)
+          --    gt  - Type definition (jumps to the type of a variable)
+          --    gO/gW - Symbols (searchable outline of functions/classes)
+
           -- Rename the variable under your cursor.
           --  Most Language Servers support renaming across files, etc.
           map('<leader>rn', vim.lsp.buf.rename, '[R]e[n]ame')

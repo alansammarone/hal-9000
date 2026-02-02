@@ -2,3 +2,6 @@ __pycache__
 .DS_Store
 .zsh_secrets
 .zcompdump*
+
+# Neovim generated files
+home/nvim/doc/tags
